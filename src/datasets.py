@@ -1,0 +1,108 @@
+from dataclasses import dataclass
+
+import numpy as np
+from sklearn.datasets import load_diabetes
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+
+@dataclass
+class Dataset:
+    """Simple container for a dataset already split into train/test"""
+
+    name: str
+    X_train: np.ndarray
+    X_test: np.ndarray
+    y_train: np.ndarray
+    y_test: np.ndarray
+
+    @property
+    def n_train(self) -> int:
+        return self.X_train.shape[0]
+
+    @property
+    def n_features(self) -> int:
+        return self.X_train.shape[1]
+    
+    
+#REAL DATASET
+def load_real_dataset(test_size: float = 0.25, random_state: int = 0) -> Dataset:
+    """
+    Load the real-world dataset: sklearn's 'diabetes' dataset (regression,
+    442 patients, 10 clinical features, target = a quantitative measure of
+    disease progression one year after baseline).
+
+    It is a small/medium-sized dataset, well suited to running many
+    experiments quickly, and a genuine regression problem rather than a toy
+    example.
+    """
+    data = load_diabetes()
+    X, y = data.data, data.target
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=random_state
+    )
+
+    # Standardize the features. IMPORTANT: the scaler is fit ONLY on the
+    # training set (fit_transform on train, transform on test). If we fit
+    # it on the test set too, we would be using information we would not
+    # actually have at training time -> data leakage.
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    # Center the target , using ONLY the mean computed on the training set.
+    y_mean = y_train.mean()
+    y_train = y_train - y_mean
+    y_test = y_test - y_mean
+
+    return Dataset(
+        name="real_diabetes",
+        X_train=X_train,
+        X_test=X_test,
+        y_train=y_train,
+        y_test=y_test,
+    )
+    
+    
+def generate_synthetic_dataset(
+    n_samples: int = 500,
+    n_features: int = 20,
+    noise_std: float = 1.0,
+    test_size: float = 0.25,
+    random_state: int = 0,
+) -> Dataset:
+    """
+    Generate a synthetic linear regression dataset.
+
+    Generative process (deterministic given the seed):
+      1. X: n_samples points, each with n_features coordinates i.i.d. from
+         a standard Normal(0, 1).
+      2. w_true: a fixed 'ground truth' weight vector, with about 30% of
+         its entries set to zero (so the problem also has a sparsity
+         structure, useful later when comparing Ridge and Lasso).
+      3. y = X @ w_true + Gaussian noise with standard deviation noise_std.
+    """
+    rng = np.random.default_rng(random_state)
+
+    X = rng.normal(loc=0.0, scale=1.0, size=(n_samples, n_features))
+
+    w_true = rng.normal(loc=0.0, scale=1.0, size=n_features)
+    n_zero = int(round(0.3 * n_features))
+    zero_idx = rng.choice(n_features, size=n_zero, replace=False)
+    w_true[zero_idx] = 0.0
+
+    noise = rng.normal(loc=0.0, scale=noise_std, size=n_samples)
+    y = X @ w_true + noise
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=random_state
+    )
+
+    return Dataset(
+        name="synthetic",
+        X_train=X_train,
+        X_test=X_test,
+        y_train=y_train,
+        y_test=y_test,
+    )
