@@ -34,7 +34,7 @@ class RidgeRegression:
         S = _add_bias_column(X)
         n_features_plus_bias = S.shape[1]
 
-        # Normal equations of ridge: (alpha*I + S^T S) w = S^T y, where
+        # Normal equation of ridge: (alpha*I + S^T S) w = S^T y, where:
         #   A = alpha*I + S^T S   (the matrix that gets inverted)
         #   b = S^T y             
         A = self.alpha * np.eye(n_features_plus_bias) + S.T @ S
