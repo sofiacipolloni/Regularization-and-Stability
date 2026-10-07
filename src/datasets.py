@@ -30,7 +30,7 @@ class Dataset:
 
 # REAL DATASET
 
-def load_real_dataset(test_size: float = 0.25, random_state: int = 0) -> Dataset:
+def load_real_dataset(test_size: float = 0.25, random_state: int = 0) -> Dataset: #it returns a dataset
     """
     Load the real-world dataset: sklearn's 'diabetes' dataset (regression,
     442 patients, 10 clinical features, target = a quantitative measure of
@@ -40,22 +40,22 @@ def load_real_dataset(test_size: float = 0.25, random_state: int = 0) -> Dataset
     experiments quickly, and a genuine regression problem rather than a toy
     example.
     """
-    data = load_diabetes()
-    X, y = data.data, data.target  # pylint: disable=no-member  (false positive)
+    data = load_diabetes() 
+    X, y = data.data, data.target # pylint: disable=no-member  
+    #(X = matrix, y = vector)
 
-    # random_state is the seed: fixing it makes the split reproducible.
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, random_state=random_state
+        X, y, test_size=test_size, random_state=random_state # random_state = seed --> split reproducible and same everytime
     )
 
     # Standardization of the features (mean 0, std 1). The scaler is fit on the
     # train set only (otherwise: data leakage) and then reused on the test set
     scaler = StandardScaler()
-    X_train = scaler.fit_transform(X_train)
+    X_train = scaler.fit_transform(X_train) # fit: meand and sd of each column only on the training set
     X_test = scaler.transform(X_test)
 
     # Center the target using the train mean only (data leakage)
-    y_mean = y_train.mean()
+    y_mean = y_train.mean() 
     y_train = y_train - y_mean
     y_test = y_test - y_mean
 
@@ -75,7 +75,7 @@ def generate_synthetic_dataset(
     n_samples: int = 500,
     n_features: int = 20,
     noise_std: float = 1.0,
-    test_size: float = 0.25,
+    test_size: float = 0.25, 
     random_state: int = 0,
 ) -> Dataset:
     """
@@ -89,24 +89,21 @@ def generate_synthetic_dataset(
          structure, useful later when comparing Ridge and Lasso).
       3. y = X @ w_true + Gaussian noise with standard deviation noise_std.
     """
-   
-    rng = np.random.default_rng(random_state)   # fixed seed
+    rng = np.random.default_rng(random_state) # generator of casual numbers with fixed seed 
 
-    X = rng.normal(loc=0.0, scale=1.0, size=(n_samples, n_features)) # gaussian features: already mean 0 / variance 1 --> no scaling 
+    X = rng.normal(loc=0.0, scale=1.0, size=(n_samples, n_features)) # gaussian
 
-   
-    w_true = rng.normal(loc=0.0, scale=1.0, size=n_features) # true weights to generate y. 30% set to 0 --> no effect on y
-    n_zero = int(round(0.3 * n_features))
-    zero_idx = rng.choice(n_features, size=n_zero, replace=False)
-    w_true[zero_idx] = 0.0
+    w_true = rng.normal(loc=0.0, scale=1.0, size=n_features) # vector of weights
+    n_zero = int(round(0.3 * n_features)) #30% = 6
+    zero_idx = rng.choice(n_features, size=n_zero, replace=False) # choice of 6 indexes
+    w_true[zero_idx] = 0.0 # set them to 0 --> no effect on y
 
-    noise = rng.normal(loc=0.0, scale=noise_std, size=n_samples) # inear signal + gaussian noise
+    noise = rng.normal(loc=0.0, scale=noise_std, size=n_samples) # gaussian noise (sd=1)
     y = X @ w_true + noise
-
 
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_size, random_state=random_state
-    )
+    ) # no scaler --> already centered 
 
     return Dataset(
         name="synthetic",

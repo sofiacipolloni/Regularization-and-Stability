@@ -4,7 +4,7 @@ import numpy as np
 
 # HELPER
 
-def _add_bias_column(X: np.ndarray) -> np.ndarray:
+def _add_bias_column(X: np.ndarray) -> np.ndarray: # returns a matrix; _ : internal function
     """
     Prepend a column of ones to X.
 
@@ -15,8 +15,8 @@ def _add_bias_column(X: np.ndarray) -> np.ndarray:
     This way the closed-form formula w = (alpha*I + S^T S)^-1 S^T y
     directly gives us everything, with no separate bias term to track.
     """
-    ones = np.ones((X.shape[0], 1))
-    return np.hstack([ones, X])
+    ones = np.ones((X.shape[0], 1)) # column of 1 with n. of rows of X
+    return np.hstack([ones, X]) # h = horizontal: X = n × d --> n × (d+1).
 
 
 
@@ -25,39 +25,34 @@ def _add_bias_column(X: np.ndarray) -> np.ndarray:
 class RidgeRegression:
     """Ridge regression, fit in closed form: w = (alpha*I + S^T S)^-1 S^T y."""
 
-    def __init__(self, alpha: float = 1.0):
+    def __init__(self, alpha: float = 1.0): # constructor
         self.alpha = alpha # regularization strength 
-        self.w = None  # learned weights, set by fit()
+        self.w = None  # weights not yet --> set by fit()
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> "RidgeRegression":
-        """Learn w by solving the ridge normal equations."""
         S = _add_bias_column(X)
-        n_features_plus_bias = S.shape[1]
+        n_features_plus_bias = S.shape[1] # n. of cols
 
         # Normal equation of ridge: (alpha*I + S^T S) w = S^T y, where:
         #   A = alpha*I + S^T S   (the matrix that gets inverted)
-        #   b = S^T y             
+        #   b = S^T y 
         A = self.alpha * np.eye(n_features_plus_bias) + S.T @ S
         b = S.T @ y
 
-    
         try:
-            self.w = np.linalg.solve(A, b) # if alpha > 0; instead of the inverse of A (to obtain w)
-        except np.linalg.LinAlgError: # if alpha = 0 --> A not invertible --> infinite solutions
-            self.w = np.linalg.pinv(A) @ b # solution: pseudo-inverse
+            self.w = np.linalg.solve(A, b) # if alpha > 0 --> A always invertible
+        except np.linalg.LinAlgError: # if alpha = 0 --> A may be not invertible
+            self.w = np.linalg.pinv(A) @ b # solution: pseudo-inverse (eg. minmum norm)
 
         return self
 
-    def predict(self, X: np.ndarray) -> np.ndarray:
-        """Predict targets for new points: y_hat = [1 | X] @ w."""
-        S = _add_bias_column(X) # add the column of ones (w includes the intercept)
-        return S @ self.w
+    def predict(self, X: np.ndarray) -> np.ndarray: 
+        S = _add_bias_column(X) # add the column of ones
+        return S @ self.w # vector with predictions for each row of S
 
-    # Mean squared error
     def mse(self, X: np.ndarray, y: np.ndarray) -> float:
-        """Mean squared error of the current model on (X, y)."""
         y_pred = self.predict(X)
-        return float(np.mean((y - y_pred) ** 2)) # float() converts a scalar
+        return float(np.mean((y - y_pred) ** 2))
 
 
 
@@ -67,4 +62,4 @@ class LeastSquaresRegression(RidgeRegression):
     """Ordinary (unregularized) least squares, i.e. the alpha=0 special case of ridge."""
 
     def __init__(self):
-        super().__init__(alpha=0.0) # alpha = 0 --> no penalty term
+        super().__init__(alpha=0.0) # fixes alpha = 0 --> no penalty term
