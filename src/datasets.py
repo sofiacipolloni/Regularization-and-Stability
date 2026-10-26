@@ -86,7 +86,7 @@ def generate_synthetic_dataset(
          a standard Normal(0, 1).
       2. w_true: a fixed 'ground truth' weight vector, with about 30% of
          its entries set to zero (so the problem also has a sparsity
-         structure, useful later when comparing Ridge and Lasso).
+         structure, useful for a hypothetical Ridge vs Lasso extension).
       3. y = X @ w_true + Gaussian noise with standard deviation noise_std.
     """
     rng = np.random.default_rng(random_state) # generator of casual numbers with fixed seed 

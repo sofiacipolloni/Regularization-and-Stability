@@ -114,7 +114,9 @@ def style_axis(ax, title, subtitle, ylabel):
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.minorticks_off()
-    ax.set_xlabel("training set size n")
+    ax.set_xlabel(r"$n$")
+    ax.set_xticks(N_VALUES)  # one tick for each value of n used in the experiment
+    ax.set_xticklabels([str(n) for n in N_VALUES])  # plain numbers, not powers of 10
     ax.set_ylabel(ylabel)
     ax.set_title(title, loc="left", fontsize=12, fontweight="bold", pad=24)
     ax.text(0, 1.03, subtitle, transform=ax.transAxes, fontsize=9, color=MUTED)
@@ -129,7 +131,7 @@ def draw_one_over_n(ax, rows):
                   if r["setting"] == "alpha" and r["value"] == 0 and r["n"] == 200)
     ns = np.array(N_VALUES)
     ax.plot(ns, anchor * 200 / ns, color=MUTED, linestyle="--", linewidth=1, zorder=2,
-            label="slope -1 (1/n)")
+            label=r"slope $-1$ (proportional to $1/n$)")
 
 
 # legend under the panel, so it never covers the curves
@@ -142,25 +144,26 @@ def plot_effect_of_n(rows):
     """Three panels: stability (fixed alpha), stability (alpha = lambda * n), test error."""
     fig, axes = plt.subplots(1, 3, figsize=(15, 4.8))
 
-    draw_lines(axes[0], rows, "alpha", "pred_change", r"$\alpha$ = {:g}")
+    draw_lines(axes[0], rows, "alpha", "pred_change", r"$\alpha = {:g}$")
     draw_one_over_n(axes[0], rows)
-    style_axis(axes[0], "Stability, same alpha", "alpha does not change with n",
+    style_axis(axes[0], r"Stability, fixed $\alpha$", r"$\alpha$ does not change with $n$",
                "mean |change in prediction|")
     legend_below(axes[0])
 
-    draw_lines(axes[1], rows, "lambda", "pred_change", r"$\alpha = {:g}\,n$")
+    draw_lines(axes[1], rows, "lambda", "pred_change", r"$\lambda = {:g}$")
     draw_one_over_n(axes[1], rows)
-    style_axis(axes[1], "Stability, alpha = lambda * n", "the penalty grows with n",
-               "mean |change in prediction|")
+    style_axis(axes[1], r"Stability, fixed $\lambda$ ($\alpha=\lambda n$)",
+               r"the penalty grows with $n$", "mean |change in prediction|")
     legend_below(axes[1])
 
-    draw_lines(axes[2], rows, "alpha", "test_mse", r"$\alpha$ = {:g}")
+    draw_lines(axes[2], rows, "alpha", "test_mse", r"$\alpha = {:g}$")
     axes[2].axhline(NOISE_VARIANCE, color=MUTED, linestyle=":", linewidth=1, zorder=2,
                     label="noise variance (best possible)")
-    style_axis(axes[2], "Test error, same alpha", "closer to the dotted line is better", "test MSE")
+    style_axis(axes[2], r"Test error, fixed $\alpha$", "closer to the dotted line is better",
+               "test MSE")
     legend_below(axes[2])
 
-    figure_title(fig, "More data makes the algorithm more stable",
+    figure_title(fig, "Effect of the training set size n",
                  "Synthetic data (d = 20), mean over 5 random training subsets for each n")
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     # bbox_inches="tight" --> the legends below the panels are not cut off

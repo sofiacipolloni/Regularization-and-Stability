@@ -206,7 +206,7 @@ def plot_stability(column="pred_change", what="prediction",
         style_axis(ax, title, alpha_subtitle(cv_alpha, best_test_alpha),
                    f"mean |change in {what}|")
         ax.set_ylim(bottom=0)  # y-axis starts from 0
-    figure_title(fig, "Stability increases as regularization increases",
+    figure_title(fig, "Stability vs regularization",
                  f"Average change in the test {what} when one training point "
                  "is removed (leave-one-out): lower = more stable")
     curve_handle = series_handle("test", label)
