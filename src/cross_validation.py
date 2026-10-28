@@ -1,8 +1,3 @@
-"""
-Choice of alpha by K-fold cross-validation, using ONLY the training set.
-The test set is touched once, at the end, to evaluate the chosen alpha.
-"""
-
 import csv
 
 import numpy as np
@@ -17,7 +12,6 @@ N_FOLDS = 5
 
 # K-FOLD SPLITTING
 def make_folds(n_samples, n_folds, random_state=0):
-    """Return a list of n_folds arrays of indices (the validation folds)."""
     rng = np.random.default_rng(random_state) # random generator with fixed seed
     shuffled = rng.permutation(n_samples) # mix numbers 1 --> n-1 (indices of training points)
     return np.array_split(shuffled, n_folds)  # folds of almost equal size (66/67) --> validation set
@@ -25,7 +19,6 @@ def make_folds(n_samples, n_folds, random_state=0):
 
 # CROSS-VALIDATED ERROR OF ONE ALPHA
 def cv_error(X_train, y_train, alpha, folds):
-    """Mean and std (over the folds) of the validation MSE for this alpha."""
     errors = []
     for val_idx in folds: # each time: 1 fold as validation
         mask = np.ones(len(y_train), dtype=bool) # list of Trues (1 for each point)
@@ -37,7 +30,6 @@ def cv_error(X_train, y_train, alpha, folds):
 
 # ALPHA SELECTION
 def select_alpha(dataset, alphas, n_folds=N_FOLDS):
-    """Cross-validate every alpha on the training set; return rows and best alpha."""
     folds = make_folds(dataset.n_train, n_folds)  # same folds for every alpha
     rows = []
     for alpha in alphas:
@@ -50,7 +42,6 @@ def select_alpha(dataset, alphas, n_folds=N_FOLDS):
 # MAIN
 
 def main():
-    """Select alpha by CV on both datasets and evaluate it once on the test set."""
     for ds in [load_real_dataset(), generate_synthetic_dataset()]:
         rows, best_alpha = select_alpha(ds, ALPHAS)
 

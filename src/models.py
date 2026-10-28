@@ -5,16 +5,6 @@ import numpy as np
 # HELPER
 
 def _add_bias_column(X: np.ndarray) -> np.ndarray: # returns a matrix; _ : internal function
-    """
-    Prepend a column of ones to X.
-
-    This lets a single weight vector w represent both the intercept and
-    the slopes at once (the "homogeneous" representation): instead of
-    predicting y = X @ w + b, we predict y = S @ w where
-    S = [1 | X] and w's first entry plays the role of the intercept b.
-    This way the closed-form formula w = (alpha*I + S^T S)^-1 S^T y
-    directly gives us everything, with no separate bias term to track.
-    """
     ones = np.ones((X.shape[0], 1)) # column of 1 with n. of rows of X
     return np.hstack([ones, X]) # h = horizontal: X = n × d --> n × (d+1).
 
@@ -23,7 +13,6 @@ def _add_bias_column(X: np.ndarray) -> np.ndarray: # returns a matrix; _ : inter
 # RIDGE REGRESSION
 
 class RidgeRegression:
-    """Ridge regression, fit in closed form: w = (alpha*I + S^T S)^-1 S^T y."""
 
     def __init__(self, alpha: float = 1.0): # constructor
         self.alpha = alpha # regularization strength 
@@ -59,7 +48,5 @@ class RidgeRegression:
 # LEAST SQUARES (special case of ridge)
 
 class LeastSquaresRegression(RidgeRegression):
-    """Ordinary (unregularized) least squares, i.e. the alpha=0 special case of ridge."""
-
     def __init__(self):
         super().__init__(alpha=0.0) # fixes alpha = 0 --> no penalty term

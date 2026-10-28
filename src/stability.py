@@ -30,13 +30,7 @@ def leave_one_out_stability(
     max_points: int | None = None, 
     random_state: int = 0,
 ) -> StabilityResult: # gives back a new model
-    """
-    Estimate the stability of a learning algorithm via the leave-one-out
-    procedure described in the assignment: remove one training point at a
-    time, retrain, and measure how much the predictions (and the loss) on
-    a FIXED test set change compared to the model trained on the full
-    training set.
-    """
+    
     n_train = X_train.shape[0] # n. training points
 
     reference_model = model_factory(alpha) # trained on the full training set --> the function works with any model

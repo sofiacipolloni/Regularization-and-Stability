@@ -1,11 +1,3 @@
-"""
-Extension 1: effect of the training set size n on stability and generalization gap.
-Synthetic data only (we can generate as many points as we need). For each n we
-train on a random subset of a big training pool, always testing on the same
-test set, and repeat several times to average out the randomness of the subset.
-Results go to results/n_sweep_synthetic.csv and results/effect_of_n.png.
-"""
-
 import csv
 import sys
 from pathlib import Path
@@ -13,7 +5,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-# this file lives in src/extensions/ --> add src/ to the search path to import our own modules
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 # pylint: disable=wrong-import-position,import-error
@@ -27,32 +19,27 @@ from stability import leave_one_out_stability
 
 N_VALUES = [25, 50, 100, 200, 400, 800, 1600, 3000]  # training set sizes (d = 20 --> 21 weights)
 N_REPEATS = 5       # random subsets of the pool for each n
-LOO_POINTS = 100    # leave-one-out on 100 random points only --> keeps the big n fast
-NOISE_VARIANCE = 1.0  # noise_std = 1 in generate_synthetic_dataset --> best possible test MSE
+LOO_POINTS = 100    
+NOISE_VARIANCE = 1.0  # best possible test MSE
 
-# two ways of keeping the regularization "the same" while n grows:
-#   "alpha"  = same alpha for every n (the penalty gets relatively weaker as n grows)
-#   "lambda" = alpha = lambda * n, i.e. the penalty grows with n (lambda = alpha / n)
+# two ways of keeping the regularization fixed while n grows:
 SETTINGS = {
     "alpha": [0.0, 1.0, 10.0, 100.0, 1000.0],  # 0 = least squares
     "lambda": [0.0, 0.1, 1.0, 10.0],
 }
 
-# purple ramp from weak to strong regularization (least squares is drawn in gold)
+
 RAMP = ["#b79bd9", "#9266c0", "#6a3d9a", "#3f1f66"]
 
 
 # EXPERIMENT
 
-# alpha actually used for a given setting, value and n
 def alpha_for(setting, value, n):
-    """alpha itself for 'alpha', value * n for 'lambda'."""
     return value if setting == "alpha" else value * n
 
 
 # one run: train on n random points of the pool, test on the fixed test set
 def run_once(dataset, n, alpha, seed):
-    """Return train MSE, test MSE and mean |change in prediction| for this subset."""
     idx = np.random.default_rng(seed).choice(dataset.n_train, size=n, replace=False)
     x_sub, y_sub = dataset.X_train[idx], dataset.y_train[idx]  # random subset of size n
     model = RidgeRegression(alpha).fit(x_sub, y_sub)
@@ -62,9 +49,7 @@ def run_once(dataset, n, alpha, seed):
             stab.mean_abs_pred_change)
 
 
-# every (setting, value, n) combination, averaged over the repeats
 def run_n_sweep(dataset):
-    """Return one row per (setting, value, n) with the mean over the repeats."""
     rows = []
     for setting, values in SETTINGS.items():
         for value in values:
@@ -83,7 +68,6 @@ def run_n_sweep(dataset):
 # SAVING
 
 def save_csv(rows, path):
-    """Write a list of dicts to a CSV file."""
     path.parent.mkdir(exist_ok=True)
     with open(path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
@@ -93,9 +77,8 @@ def save_csv(rows, path):
 
 # PLOT
 
-# curve of one column against n for one setting, one line per value
+
 def draw_lines(ax, rows, setting, column, label_fmt):
-    """Draw one line per value of the setting; least squares in gold, the rest in purple."""
     values = SETTINGS[setting]
     shades = RAMP[len(RAMP) - len(values) + 1:]  # as many purples as non-zero values
     for i, value in enumerate(values):
@@ -108,9 +91,7 @@ def draw_lines(ax, rows, setting, column, label_fmt):
                 markeredgecolor=BG, markeredgewidth=1.2, label=label, zorder=3)
 
 
-# log-log axes, light grid, title + small subtitle (same look as plot_results.py)
 def style_axis(ax, title, subtitle, ylabel):
-    """Apply the shared formatting to one panel."""
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.minorticks_off()
@@ -124,9 +105,7 @@ def style_axis(ax, title, subtitle, ylabel):
     ax.set_axisbelow(True)
 
 
-# dashed reference line with slope -1 (value proportional to 1/n), through one point
-def draw_one_over_n(ax, rows):
-    """Reference line ~ 1/n, anchored on least squares at n = 200."""
+def draw_one_over_n(ax, rows): # reference line with slope -1 (value proportional to 1/n)
     anchor = next(r["pred_change"] for r in rows
                   if r["setting"] == "alpha" and r["value"] == 0 and r["n"] == 200)
     ns = np.array(N_VALUES)
@@ -134,10 +113,8 @@ def draw_one_over_n(ax, rows):
             label=r"slope $-1$ (proportional to $1/n$)")
 
 
-# legend under the panel, so it never covers the curves
 def legend_below(ax, extra_axis=None):
-    """Legend under the panel, so it never covers the curves; it can borrow the entries of the
-    panel above (e.g. the 1/n reference line) so that each column has a single legend."""
+    
     handles, labels = ax.get_legend_handles_labels()
     if extra_axis is not None:
         for handle, label in zip(*extra_axis.get_legend_handles_labels()):
@@ -149,8 +126,7 @@ def legend_below(ax, extra_axis=None):
 
 
 def plot_effect_of_n(rows):
-    """Four panels: stability on the top row, test error on the bottom row; fixed alpha on the
-    left, fixed lambda (alpha = lambda * n) on the right."""
+
     fig, axes = plt.subplots(2, 2, figsize=(11, 9.5), sharey="row")
     (stab_alpha, stab_lambda), (mse_alpha, mse_lambda) = axes
 
@@ -173,22 +149,21 @@ def plot_effect_of_n(rows):
                    label="noise variance (best possible)")
         style_axis(ax, title, subtitle, "test MSE")
 
-    # one legend per column, under the bottom panel (the top panel adds the 1/n line)
+    # one legend per column
     legend_below(mse_alpha, extra_axis=stab_alpha)
     legend_below(mse_lambda, extra_axis=stab_lambda)
 
     figure_title(fig, "Effect of the training set size n",
                  "Synthetic data (d = 20), mean over 5 random training subsets for each n")
     fig.tight_layout(rect=(0, 0, 1, 0.92), h_pad=3.5)
-    # bbox_inches="tight" --> the legends below the panels are not cut off
-    fig.savefig(RESULTS_DIR / "effect_of_n.png", dpi=200, bbox_inches="tight")
+    
+    fig.savefig(RESULTS_DIR / "effect_of_n.png", dpi=200, bbox_inches="tight") # bbox_inches="tight" --> the legends below the panels are not cut off
     plt.close(fig)
 
 
 # MAIN
 
 def main():
-    """Run the sweep over n, save the table and draw the figure."""
     pool = generate_synthetic_dataset(n_samples=4000)  # 3000 training points + 1000 test points
     rows = run_n_sweep(pool)
     save_csv(rows, RESULTS_DIR / "n_sweep_synthetic.csv")
