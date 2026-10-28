@@ -135,37 +135,51 @@ def draw_one_over_n(ax, rows):
 
 
 # legend under the panel, so it never covers the curves
-def legend_below(ax):
-    """Place the legend of this panel below the x-axis label."""
-    ax.legend(frameon=False, loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=3, fontsize=8)
+def legend_below(ax, extra_axis=None):
+    """Legend under the panel, so it never covers the curves; it can borrow the entries of the
+    panel above (e.g. the 1/n reference line) so that each column has a single legend."""
+    handles, labels = ax.get_legend_handles_labels()
+    if extra_axis is not None:
+        for handle, label in zip(*extra_axis.get_legend_handles_labels()):
+            if label not in labels:
+                handles.append(handle)
+                labels.append(label)
+    ax.legend(handles, labels, frameon=False, loc="upper center", bbox_to_anchor=(0.5, -0.2),
+              ncol=3, fontsize=8)
 
 
 def plot_effect_of_n(rows):
-    """Three panels: stability (fixed alpha), stability (alpha = lambda * n), test error."""
-    fig, axes = plt.subplots(1, 3, figsize=(15, 4.8))
+    """Four panels: stability on the top row, test error on the bottom row; fixed alpha on the
+    left, fixed lambda (alpha = lambda * n) on the right."""
+    fig, axes = plt.subplots(2, 2, figsize=(11, 9.5), sharey="row")
+    (stab_alpha, stab_lambda), (mse_alpha, mse_lambda) = axes
 
-    draw_lines(axes[0], rows, "alpha", "pred_change", r"$\alpha = {:g}$")
-    draw_one_over_n(axes[0], rows)
-    style_axis(axes[0], r"Stability, fixed $\alpha$", r"$\alpha$ does not change with $n$",
+    draw_lines(stab_alpha, rows, "alpha", "pred_change", r"$\alpha = {:g}$")
+    draw_one_over_n(stab_alpha, rows)
+    style_axis(stab_alpha, r"Stability, fixed $\alpha$", r"$\alpha$ does not change with $n$",
                "mean |change in prediction|")
-    legend_below(axes[0])
 
-    draw_lines(axes[1], rows, "lambda", "pred_change", r"$\lambda = {:g}$")
-    draw_one_over_n(axes[1], rows)
-    style_axis(axes[1], r"Stability, fixed $\lambda$ ($\alpha=\lambda n$)",
+    draw_lines(stab_lambda, rows, "lambda", "pred_change", r"$\lambda = {:g}$")
+    draw_one_over_n(stab_lambda, rows)
+    style_axis(stab_lambda, r"Stability, fixed $\lambda$ ($\alpha=\lambda n$)",
                r"the penalty grows with $n$", "mean |change in prediction|")
-    legend_below(axes[1])
 
-    draw_lines(axes[2], rows, "alpha", "test_mse", r"$\alpha = {:g}$")
-    axes[2].axhline(NOISE_VARIANCE, color=MUTED, linestyle=":", linewidth=1, zorder=2,
-                    label="noise variance (best possible)")
-    style_axis(axes[2], r"Test error, fixed $\alpha$", "closer to the dotted line is better",
-               "test MSE")
-    legend_below(axes[2])
+    for ax, setting, title, subtitle in (
+            (mse_alpha, "alpha", r"Test error, fixed $\alpha$", r"$\alpha$ does not change with $n$"),
+            (mse_lambda, "lambda", r"Test error, fixed $\lambda$ ($\alpha=\lambda n$)",
+             r"the penalty grows with $n$")):
+        draw_lines(ax, rows, setting, "test_mse", r"$\{} = {{:g}}$".format(setting))
+        ax.axhline(NOISE_VARIANCE, color=MUTED, linestyle=":", linewidth=1, zorder=2,
+                   label="noise variance (best possible)")
+        style_axis(ax, title, subtitle, "test MSE")
+
+    # one legend per column, under the bottom panel (the top panel adds the 1/n line)
+    legend_below(mse_alpha, extra_axis=stab_alpha)
+    legend_below(mse_lambda, extra_axis=stab_lambda)
 
     figure_title(fig, "Effect of the training set size n",
                  "Synthetic data (d = 20), mean over 5 random training subsets for each n")
-    fig.tight_layout(rect=(0, 0, 1, 0.95))
+    fig.tight_layout(rect=(0, 0, 1, 0.92), h_pad=3.5)
     # bbox_inches="tight" --> the legends below the panels are not cut off
     fig.savefig(RESULTS_DIR / "effect_of_n.png", dpi=200, bbox_inches="tight")
     plt.close(fig)
