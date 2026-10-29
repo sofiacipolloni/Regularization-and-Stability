@@ -23,3 +23,4 @@ Run from the root of the repository, in this order:
 Tables and figures are saved in `results/`. The modules `src/datasets.py`, `src/models.py` and
 `src/stability.py` are imported by the scripts above and do not need to be run. All the random choices use fixed seeds, so the
 numbers of the report are reproduced exactly.
+The figures are saved as PNG files in `results/` (no window is shown).
