@@ -1,9 +1,7 @@
 import numpy as np
 
 
-
 # HELPER
-
 def _add_bias_column(X: np.ndarray) -> np.ndarray: # returns a matrix; _ : internal function
     ones = np.ones((X.shape[0], 1)) # column of 1 with n. of rows of X
     return np.hstack([ones, X]) # h = horizontal: X = n × d --> n × (d+1).
@@ -11,12 +9,11 @@ def _add_bias_column(X: np.ndarray) -> np.ndarray: # returns a matrix; _ : inter
 
 
 # RIDGE REGRESSION
-
 class RidgeRegression:
 
     def __init__(self, alpha: float = 1.0): # constructor
         self.alpha = alpha # regularization strength 
-        self.w = None  # weights not yet --> set by fit()
+        self.w = None  # weights not yet available--> set by fit()
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> "RidgeRegression":
         S = _add_bias_column(X)
@@ -25,13 +22,14 @@ class RidgeRegression:
         # Normal equation of ridge: (alpha*I + S^T S) w = S^T y, where:
         #   A = alpha*I + S^T S   (the matrix that gets inverted)
         #   b = S^T y 
+        #   intercept is penalized too
         A = self.alpha * np.eye(n_features_plus_bias) + S.T @ S
         b = S.T @ y
 
         try:
             self.w = np.linalg.solve(A, b) # if alpha > 0 --> A always invertible
         except np.linalg.LinAlgError: # if alpha = 0 --> A may be not invertible
-            self.w = np.linalg.pinv(A) @ b # solution: pseudo-inverse (eg. minmum norm)
+            self.w = np.linalg.pinv(A) @ b # solution: pseudo-inverse (eg. minimum norm)
 
         return self
 
@@ -46,7 +44,6 @@ class RidgeRegression:
 
 
 # LEAST SQUARES (special case of ridge)
-
 class LeastSquaresRegression(RidgeRegression):
     def __init__(self):
         super().__init__(alpha=0.0) # fixes alpha = 0 --> no penalty term

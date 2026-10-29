@@ -26,17 +26,15 @@ class Dataset:
         return self.X_train.shape[1]
 
 
-
 # REAL DATASET
-
-def load_real_dataset(test_size: float = 0.25, random_state: int = 0) -> Dataset: #it returns a dataset
+def load_real_dataset(test_size: float = 0.25, random_state: int = 0) -> Dataset: # returns a dataset
     
     data = load_diabetes() 
     X, y = data.data, data.target # pylint: disable=no-member  
-    #(X = matrix, y = vector)
+    # (X = matrix, y = vector)
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, random_state=random_state # random_state = seed --> split reproducible and same everytime
+        X, y, test_size=test_size, random_state=random_state # random_state = seed --> split reproducible and same every time
     )
 
     # Standardization of the features (mean 0, std 1). 
@@ -61,7 +59,6 @@ def load_real_dataset(test_size: float = 0.25, random_state: int = 0) -> Dataset
 
 
 # SYNTHETIC DATASET
-
 def generate_synthetic_dataset(
     n_samples: int = 500,
     n_features: int = 20,
@@ -70,13 +67,13 @@ def generate_synthetic_dataset(
     random_state: int = 0,
 ) -> Dataset:
 
-    rng = np.random.default_rng(random_state) # generator of casual numbers with fixed seed 
+    rng = np.random.default_rng(random_state) # generator of random numbers with fixed seed 
 
     X = rng.normal(loc=0.0, scale=1.0, size=(n_samples, n_features)) # gaussian 
 
     w_true = rng.normal(loc=0.0, scale=1.0, size=n_features) # vector of weights
     n_zero = int(round(0.3 * n_features)) #30% = 6
-    zero_idx = rng.choice(n_features, size=n_zero, replace=False) # choice of 6 indexes
+    zero_idx = rng.choice(n_features, size=n_zero, replace=False) # choice of 6 indeces
     w_true[zero_idx] = 0.0 # set them to 0 --> no effect on y
 
     noise = rng.normal(loc=0.0, scale=noise_std, size=n_samples) # gaussian noise (sd=1)

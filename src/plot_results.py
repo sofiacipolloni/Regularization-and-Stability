@@ -15,7 +15,6 @@ DATASETS = [
 
 
 # STYLE
-
 TEST_COLOR = "#6a3d9a"   # plum: test
 TRAIN_COLOR = "#c47f00"  # gold: training series
 
@@ -195,7 +194,6 @@ def plot_stability(column="pred_change", what="prediction",
 
 
 # FIGURE 2: TEST ERROR VS ALPHA
-
 def plot_test_error():
     
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.8))

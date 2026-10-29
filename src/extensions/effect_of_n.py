@@ -5,7 +5,6 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 # pylint: disable=wrong-import-position,import-error
@@ -16,25 +15,23 @@ from stability import leave_one_out_stability
 
 
 # CONFIGURATION
-
-N_VALUES = [25, 50, 100, 200, 400, 800, 1600, 3000]  # training set sizes (d = 20 --> 21 weights)
-N_REPEATS = 5       # random subsets of the pool for each n
-LOO_POINTS = 100    
-NOISE_VARIANCE = 1.0  # best possible test MSE
+N_VALUES = [25, 50, 100, 200, 400, 800, 1600, 3000]  # training set sizes (d = 20 --> 21 weights, so n starts just above 21)
+N_REPEATS = 5  # random subsets of the pool for each n
+LOO_POINTS = 100  # at most 100 randomly chosen points are removed in the leave-one-out (to save time)
+NOISE_VARIANCE = 1.0  # best possible test MSE (noise std = 1)
 
 # two ways of keeping the regularization fixed while n grows:
 SETTINGS = {
-    "alpha": [0.0, 1.0, 10.0, 100.0, 1000.0],  # 0 = least squares
-    "lambda": [0.0, 0.1, 1.0, 10.0],
+    "alpha": [0.0, 1.0, 10.0, 100.0, 1000.0],  # alpha fixed (0 = least squares)
+    "lambda": [0.0, 0.1, 1.0, 10.0],  # lambda fixed, so alpha = lambda * n
 }
 
 
-RAMP = ["#b79bd9", "#9266c0", "#6a3d9a", "#3f1f66"]
+RAMP = ["#b79bd9", "#9266c0", "#6a3d9a", "#3f1f66"]  # shades of purple, light --> dark (increasing regularization)
 
 
 # EXPERIMENT
-
-def alpha_for(setting, value, n):
+def alpha_for(setting, value, n):  # fixed alpha: alpha = value; fixed lambda: alpha = lambda * n
     return value if setting == "alpha" else value * n
 
 
@@ -46,7 +43,7 @@ def run_once(dataset, n, alpha, seed):
     stab = leave_one_out_stability(RidgeRegression, x_sub, y_sub, dataset.X_test, dataset.y_test,
                                    alpha, max_points=min(n, LOO_POINTS), random_state=seed)
     return (model.mse(x_sub, y_sub), model.mse(dataset.X_test, dataset.y_test),
-            stab.mean_abs_pred_change)
+            stab.mean_abs_pred_change)  # (train MSE, test MSE, stability)
 
 
 def run_n_sweep(dataset):
@@ -55,18 +52,18 @@ def run_n_sweep(dataset):
         for value in values:
             for n in N_VALUES:
                 alpha = alpha_for(setting, value, n)
+                # same seeds for every alpha --> same random subsets, so the settings are comparable
                 runs = np.array([run_once(dataset, n, alpha, seed) for seed in range(N_REPEATS)])
                 train, test, pred = runs.mean(axis=0)  # mean over the repeats
                 rows.append({
                     "setting": setting, "value": value, "n": n,
                     "train_mse": train, "test_mse": test, "gap": test - train,
-                    "pred_change": pred, "pred_change_std": runs[:, 2].std(),
+                    "pred_change": pred, "pred_change_std": runs[:, 2].std(),  # std of the stability over the repeats
                 })
     return rows
 
 
 # SAVING
-
 def save_csv(rows, path):
     path.parent.mkdir(exist_ok=True)
     with open(path, "w", newline="", encoding="utf-8") as f:
@@ -76,8 +73,6 @@ def save_csv(rows, path):
 
 
 # PLOT
-
-
 def draw_lines(ax, rows, setting, column, label_fmt):
     values = SETTINGS[setting]
     shades = RAMP[len(RAMP) - len(values) + 1:]  # as many purples as non-zero values
@@ -105,7 +100,8 @@ def style_axis(ax, title, subtitle, ylabel):
     ax.set_axisbelow(True)
 
 
-def draw_one_over_n(ax, rows): # reference line with slope -1 (value proportional to 1/n)
+# reference line with slope -1 (value proportional to 1/n), anchored at the least squares value for n = 200
+def draw_one_over_n(ax, rows):
     anchor = next(r["pred_change"] for r in rows
                   if r["setting"] == "alpha" and r["value"] == 0 and r["n"] == 200)
     ns = np.array(N_VALUES)
@@ -113,8 +109,8 @@ def draw_one_over_n(ax, rows): # reference line with slope -1 (value proportiona
             label=r"slope $-1$ (proportional to $1/n$)")
 
 
+# legend under the panel, with also the entries of the panel above (extra_axis) that are not there yet
 def legend_below(ax, extra_axis=None):
-    
     handles, labels = ax.get_legend_handles_labels()
     if extra_axis is not None:
         for handle, label in zip(*extra_axis.get_legend_handles_labels()):
@@ -126,8 +122,8 @@ def legend_below(ax, extra_axis=None):
 
 
 def plot_effect_of_n(rows):
-
-    fig, axes = plt.subplots(2, 2, figsize=(11, 9.5), sharey="row")
+    # top row: stability, bottom row: test MSE; left column: fixed alpha, right column: fixed lambda
+    fig, axes = plt.subplots(2, 2, figsize=(11, 9.5), sharey="row")  # each row shares the y-axis
     (stab_alpha, stab_lambda), (mse_alpha, mse_lambda) = axes
 
     draw_lines(stab_alpha, rows, "alpha", "pred_change", r"$\alpha = {:g}$")
@@ -153,16 +149,17 @@ def plot_effect_of_n(rows):
     legend_below(mse_alpha, extra_axis=stab_alpha)
     legend_below(mse_lambda, extra_axis=stab_lambda)
 
+    # the "5" in the subtitle is N_REPEATS: change it here too if N_REPEATS changes
     figure_title(fig, "Effect of the training set size n",
                  "Synthetic data (d = 20), mean over 5 random training subsets for each n")
     fig.tight_layout(rect=(0, 0, 1, 0.92), h_pad=3.5)
-    
-    fig.savefig(RESULTS_DIR / "effect_of_n.png", dpi=200, bbox_inches="tight") # bbox_inches="tight" --> the legends below the panels are not cut off
+
+    # bbox_inches="tight" --> the legends below the panels are not cut off
+    fig.savefig(RESULTS_DIR / "effect_of_n.png", dpi=200, bbox_inches="tight")
     plt.close(fig)
 
 
 # MAIN
-
 def main():
     pool = generate_synthetic_dataset(n_samples=4000)  # 3000 training points + 1000 test points
     rows = run_n_sweep(pool)

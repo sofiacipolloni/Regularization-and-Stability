@@ -4,9 +4,7 @@ from typing import Callable
 import numpy as np
 
 
-
 # RESULT CONTAINER
-
 @dataclass
 class StabilityResult:
     """Aggregated output of a leave-one-out stability estimation."""
@@ -19,9 +17,8 @@ class StabilityResult:
 
 
 # LEAVE-ONE-OUT STABILITY
-
 def leave_one_out_stability( 
-    model_factory: Callable[[float], object],
+    model_factory: Callable[[float], object], # gives back a new model
     X_train: np.ndarray,
     y_train: np.ndarray,
     X_test: np.ndarray,
@@ -29,7 +26,7 @@ def leave_one_out_stability(
     alpha: float,
     max_points: int | None = None, 
     random_state: int = 0,
-) -> StabilityResult: # gives back a new model
+) -> StabilityResult: 
     
     n_train = X_train.shape[0] # n. training points
 

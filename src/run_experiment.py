@@ -7,7 +7,6 @@ from stability import leave_one_out_stability
 
 
 # CONFIGURATION
-
 RESULTS_DIR = Path(__file__).resolve().parent.parent / "results"
 
 # Choice of alpha values 
@@ -17,7 +16,6 @@ ALPHAS = [0.0] + [float(a) for a in np.logspace(-3, 4, 15)]  # list comprehensio
 
 
 # ALPHA SWEEP
-
 def run_alpha_sweep(dataset, alphas):
     """For each alpha: train/test MSE, test R2, generalization gap and stability."""
     rows = []  # one dict (= one CSV row) for each alpha
@@ -50,7 +48,6 @@ def run_alpha_sweep(dataset, alphas):
 
 
 # SAVING AND PRINTING
-
 def save_csv(rows, path):
     path.parent.mkdir(exist_ok=True)  # create the results folder if it is not there yet
     with open(path, "w", newline="", encoding="utf-8") as f:  # "w" overwrites the old file
@@ -72,7 +69,6 @@ def print_table(name, rows): # print the rows as a table
               # ".4g" = 4 significant digits, ".4f" = 4 decimals
 
 # MAIN
-
 def main():
     all_datasets = [load_real_dataset(), generate_synthetic_dataset()]
     for ds in all_datasets:
